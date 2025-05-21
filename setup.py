@@ -11,4 +11,4 @@ setup(
         "pyyaml",
     ],
     python_requires=">=3.10",
-) 
+)
