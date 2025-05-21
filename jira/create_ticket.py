@@ -35,7 +35,8 @@ def create_jira_ticket(finding, config):
                     f"*Issue:* {finding['issue']}\n"
                     f"*CIS Rule:* {finding['cis_rule']}\n"
                     f"*Remediation:* {finding['remediation']}\n"
-                    f"*Found At:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    f"*Found At:* "
+                    f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
                 ),
                 "issuetype": {
                     "name": "Bug"  # Adjust based on your Jira setup
