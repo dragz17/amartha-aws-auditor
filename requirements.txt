@@ -1,0 +1,10 @@
+fastapi
+boto3
+uvicorn
+PyYAML
+requests
+secure-smtplib
+pytest
+pytest-cov
+bandit
+safety

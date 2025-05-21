@@ -1,0 +1,20 @@
+auth:
+  username: ${AUTH_USERNAME}
+  password: ${AUTH_PASSWORD}
+
+email:
+  smtp_server: ${SMTP_SERVER}
+  smtp_port: ${SMTP_PORT}
+  username: ${SMTP_USERNAME}
+  password: ${SMTP_PASSWORD}
+  sender: ${EMAIL_SENDER}
+  recipient: ${EMAIL_RECIPIENT}
+
+slack:
+  webhook: ${SLACK_WEBHOOK}
+
+jira:
+  domain: ${JIRA_DOMAIN}
+  email: ${JIRA_EMAIL}
+  api_token: ${JIRA_API_TOKEN}
+  project_key: ${JIRA_PROJECT_KEY} 
