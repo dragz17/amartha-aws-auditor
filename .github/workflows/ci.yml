@@ -100,7 +100,7 @@ jobs:
                         # For ARNs, keep service and resource type but redact account and name
                         parts = resource.split(':')
                         if len(parts) >= 6:
-                            sanitized['resource'] = f"{parts[2]}:{parts[5]}"
+                            sanitized['resource'] = parts[2] + ':' + parts[5]
                     elif 'i-' in resource:
                         # For EC2 instances, keep instance ID
                         sanitized['resource'] = resource
