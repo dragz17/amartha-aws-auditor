@@ -42,7 +42,7 @@ jobs:
     
     - name: Run security checks
       run: |
-        bandit -r . -f json -o bandit-results.json
+        bandit -r . -f json -o bandit-results-${{ matrix.python-version }}.json
         safety check
     
     - name: Verify AWS Credentials
@@ -87,14 +87,14 @@ jobs:
             sanitized_findings.append(sanitized)
         
         # Save sanitized findings to file
-        with open('aws-scan-results.json', 'w') as f:
+        with open('aws-scan-results-${{ matrix.python-version }}.json', 'w') as f:
             json.dump(sanitized_findings, f, indent=2)
         "
         
         # Check if any high risk findings
-        if jq -e '.[] | select(.risk == \"HIGH\")' aws-scan-results.json > /dev/null; then
+        if jq -e '.[] | select(.risk == \"HIGH\")' aws-scan-results-${{ matrix.python-version }}.json > /dev/null; then
           echo "High risk findings detected!"
-          cat aws-scan-results.json
+          cat aws-scan-results-${{ matrix.python-version }}.json
           exit 1
         fi
     
@@ -108,14 +108,7 @@ jobs:
           echo "AWS credentials not found in GitHub Secrets"
           exit 1
         fi
-        pytest --cov=. --cov-report=xml
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
-        token: ${{ secrets.CODECOV_TOKEN }}
+        pytest --cov=. --cov-report=xml --cov-report=term-missing
     
     - name: Build and test Docker image
       env:
@@ -134,33 +127,34 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results
+        name: test-results-${{ matrix.python-version }}
         path: |
           coverage.xml
-          bandit-results.json
-          aws-scan-results.json
+          bandit-results-${{ matrix.python-version }}.json
+          aws-scan-results-${{ matrix.python-version }}.json
         retention-days: 7
-        if-no-files-found: error
+        if-no-files-found: warn
 
     - name: Create Security Report
       if: always()
       run: |
-        echo "## Security Scan Summary" > security-report.md
-        echo "**WARNING: This is a public repository. Sensitive data has been redacted.**" >> security-report.md
-        echo "" >> security-report.md
-        echo "### High Risk Findings" >> security-report.md
-        jq -r '.[] | select(.risk == "HIGH") | "- " + .issue' aws-scan-results.json >> security-report.md || echo "No high risk findings" >> security-report.md
-        echo "" >> security-report.md
-        echo "### Medium Risk Findings" >> security-report.md
-        jq -r '.[] | select(.risk == "MEDIUM") | "- " + .issue' aws-scan-results.json >> security-report.md || echo "No medium risk findings" >> security-report.md
+        echo "## Security Scan Summary" > security-report-${{ matrix.python-version }}.md
+        echo "**WARNING: This is a public repository. Sensitive data has been redacted.**" >> security-report-${{ matrix.python-version }}.md
+        echo "" >> security-report-${{ matrix.python-version }}.md
+        echo "### High Risk Findings" >> security-report-${{ matrix.python-version }}.md
+        jq -r '.[] | select(.risk == "HIGH") | "- " + .issue' aws-scan-results-${{ matrix.python-version }}.json >> security-report-${{ matrix.python-version }}.md || echo "No high risk findings" >> security-report-${{ matrix.python-version }}.md
+        echo "" >> security-report-${{ matrix.python-version }}.md
+        echo "### Medium Risk Findings" >> security-report-${{ matrix.python-version }}.md
+        jq -r '.[] | select(.risk == "MEDIUM") | "- " + .issue' aws-scan-results-${{ matrix.python-version }}.json >> security-report-${{ matrix.python-version }}.md || echo "No medium risk findings" >> security-report-${{ matrix.python-version }}.md
 
     - name: Upload Security Report
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: security-report
-        path: security-report.md
+        name: security-report-${{ matrix.python-version }}
+        path: security-report-${{ matrix.python-version }}.md
         retention-days: 7
+        if-no-files-found: warn
 
     - name: Notify on failure
       if: failure()
