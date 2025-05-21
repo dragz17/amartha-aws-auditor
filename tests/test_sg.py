@@ -29,7 +29,10 @@ def test_scan_sg_ssh_open(mock_ec2_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Open to the world on port 22' for f in findings)
+    assert any(
+        f['issue'] == 'Open to the world on port 22'
+        for f in findings
+    )
 
 
 def test_scan_sg_http_open(mock_ec2_client):
@@ -50,7 +53,10 @@ def test_scan_sg_http_open(mock_ec2_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Open to the world on port 80' for f in findings)
+    assert any(
+        f['issue'] == 'Open to the world on port 80'
+        for f in findings
+    )
 
 
 def test_scan_sg_https_open(mock_ec2_client):
@@ -71,7 +77,10 @@ def test_scan_sg_https_open(mock_ec2_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Open to the world on port 443' for f in findings)
+    assert any(
+        f['issue'] == 'Open to the world on port 443'
+        for f in findings
+    )
 
 
 def test_scan_sg_rdp_open(mock_ec2_client):
@@ -92,4 +101,7 @@ def test_scan_sg_rdp_open(mock_ec2_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Open to the world on port 3389' for f in findings) 
+    assert any(
+        f['issue'] == 'Open to the world on port 3389'
+        for f in findings
+    )

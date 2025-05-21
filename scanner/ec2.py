@@ -17,9 +17,13 @@ def scan():
                     findings.append({
                         "resource": instance_id,
                         "type": "EC2 Instance",
-                        "risk": cis_rules["ec2_public_ip"]["risk_level"],
+                        "risk": (
+                            cis_rules["ec2_public_ip"]["risk_level"]
+                        ),
                         "issue": "Instance has public IP",
-                        "cis_rule": cis_rules["ec2_public_ip"]["cis_rule"],
+                        "cis_rule": (
+                            cis_rules["ec2_public_ip"]["cis_rule"]
+                        ),
                         "remediation": (
                             cis_rules["ec2_public_ip"]["remediation"]
                         )
@@ -50,7 +54,9 @@ def scan():
                         )
                     })
             except Exception as e:
-                print(f"Error checking termination protection for {instance_id}: {e}")
+                print(
+                    f"Error checking termination protection for {instance_id}: {e}"
+                )
 
             # Check volume encryption
             for block_device in instance.get('BlockDeviceMappings', []):
@@ -79,7 +85,9 @@ def scan():
                                 )
                             })
                     except Exception as e:
-                        print(f"Error checking volume encryption for {volume_id}: {e}")
+                        print(
+                            f"Error checking volume encryption for {volume_id}: {e}"
+                        )
 
     # Check public snapshots
     snapshots = ec2.describe_snapshots(OwnerIds=['self'])['Snapshots']

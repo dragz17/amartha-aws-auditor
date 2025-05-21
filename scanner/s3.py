@@ -14,11 +14,14 @@ def scan():
         try:
             acl = s3.get_bucket_acl(Bucket=bucket_name)
             for grant in acl['Grants']:
-                if grant['Grantee'].get('URI') == 'http://acs.amazonaws.com/groups/global/AllUsers':
+                if (grant['Grantee'].get('URI') ==
+                        'http://acs.amazonaws.com/groups/global/AllUsers'):
                     findings.append({
                         "resource": bucket_name,
                         "type": "S3 Bucket",
-                        "risk": cis_rules["s3_public_access"]["risk_level"],
+                        "risk": (
+                            cis_rules["s3_public_access"]["risk_level"]
+                        ),
                         "issue": "Bucket is publicly accessible",
                         "cis_rule": (
                             cis_rules["s3_public_access"]["cis_rule"]

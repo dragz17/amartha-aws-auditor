@@ -18,7 +18,9 @@ def test_scan_s3_public_access(mock_s3_client):
     }
     mock_s3_client.get_bucket_acl.return_value = {
         'Grants': [{
-            'Grantee': {'URI': 'http://acs.amazonaws.com/groups/global/AllUsers'},
+            'Grantee': {
+                'URI': 'http://acs.amazonaws.com/groups/global/AllUsers'
+            },
             'Permission': 'READ'
         }]
     }
@@ -28,7 +30,10 @@ def test_scan_s3_public_access(mock_s3_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Bucket is publicly accessible' for f in findings)
+    assert any(
+        f['issue'] == 'Bucket is publicly accessible'
+        for f in findings
+    )
 
 
 def test_scan_s3_versioning_disabled(mock_s3_client):
@@ -48,7 +53,10 @@ def test_scan_s3_versioning_disabled(mock_s3_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Bucket versioning is not enabled' for f in findings)
+    assert any(
+        f['issue'] == 'Bucket versioning is not enabled'
+        for f in findings
+    )
 
 
 def test_scan_s3_logging_disabled(mock_s3_client):
@@ -69,7 +77,10 @@ def test_scan_s3_logging_disabled(mock_s3_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Bucket access logging is not enabled' for f in findings)
+    assert any(
+        f['issue'] == 'Bucket access logging is not enabled'
+        for f in findings
+    )
 
 
 def test_scan_s3_encryption_disabled(mock_s3_client):
@@ -95,4 +106,7 @@ def test_scan_s3_encryption_disabled(mock_s3_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Bucket encryption is not enabled' for f in findings) 
+    assert any(
+        f['issue'] == 'Bucket encryption is not enabled'
+        for f in findings
+    )

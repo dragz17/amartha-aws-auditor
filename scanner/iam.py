@@ -17,9 +17,13 @@ def scan():
             findings.append({
                 "resource": user_name,
                 "type": "IAM User",
-                "risk": cis_rules["iam_user_without_mfa"]["risk_level"],
+                "risk": (
+                    cis_rules["iam_user_without_mfa"]["risk_level"]
+                ),
                 "issue": "User does not have MFA enabled",
-                "cis_rule": cis_rules["iam_user_without_mfa"]["cis_rule"],
+                "cis_rule": (
+                    cis_rules["iam_user_without_mfa"]["cis_rule"]
+                ),
                 "remediation": (
                     cis_rules["iam_user_without_mfa"]["remediation"]
                 )
@@ -32,9 +36,13 @@ def scan():
                 findings.append({
                     "resource": f"{user_name} - {key['AccessKeyId']}",
                     "type": "IAM Access Key",
-                    "risk": cis_rules["iam_root_access_key"]["risk_level"],
+                    "risk": (
+                        cis_rules["iam_root_access_key"]["risk_level"]
+                    ),
                     "issue": "Active access key found",
-                    "cis_rule": cis_rules["iam_root_access_key"]["cis_rule"],
+                    "cis_rule": (
+                        cis_rules["iam_root_access_key"]["cis_rule"]
+                    ),
                     "remediation": (
                         cis_rules["iam_root_access_key"]["remediation"]
                     )
@@ -119,9 +127,13 @@ def scan():
             findings.append({
                 "resource": "IAM Password Policy",
                 "type": "IAM Policy",
-                "risk": cis_rules["iam_password_policy"]["risk_level"],
+                "risk": (
+                    cis_rules["iam_password_policy"]["risk_level"]
+                ),
                 "issue": "Password policy does not require uppercase letters",
-                "cis_rule": cis_rules["iam_password_policy"]["cis_rule"],
+                "cis_rule": (
+                    cis_rules["iam_password_policy"]["cis_rule"]
+                ),
                 "remediation": (
                     cis_rules["iam_password_policy"]["remediation"]
                 )
@@ -130,9 +142,13 @@ def scan():
         findings.append({
             "resource": "IAM Password Policy",
             "type": "IAM Policy",
-            "risk": cis_rules["iam_password_policy"]["risk_level"],
+            "risk": (
+                cis_rules["iam_password_policy"]["risk_level"]
+            ),
             "issue": "No password policy found",
-            "cis_rule": cis_rules["iam_password_policy"]["cis_rule"],
+            "cis_rule": (
+                cis_rules["iam_password_policy"]["cis_rule"]
+            ),
             "remediation": (
                 cis_rules["iam_password_policy"]["remediation"]
             )

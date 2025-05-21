@@ -72,4 +72,3 @@ def send_alerts(results):
     # Only send email for low risk findings (no Slack alerts)
     if low_risk_findings:
         send_email_alert(low_risk_findings, config.get('email'))
-

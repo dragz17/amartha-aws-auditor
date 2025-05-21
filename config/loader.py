@@ -51,4 +51,4 @@ class ConfigLoader:
 
     def get_all(self):
         """Get all configuration values."""
-        return self.config 
+        return self.config

@@ -111,4 +111,7 @@ def test_scan_ec2_public_snapshot(mock_ec2_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Snapshot is publicly accessible' for f in findings) 
+    assert any(
+        f['issue'] == 'Snapshot is publicly accessible'
+        for f in findings
+    )
