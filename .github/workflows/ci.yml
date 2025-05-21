@@ -5,35 +5,98 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.13']
 
     steps:
     - uses: actions/checkout@v3
     
-    - name: Set up Python
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq awscli
+    
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: ${{ matrix.python-version }}
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-cov bandit safety
-        pip install -e .  # Install package in development mode
+        pip install -e .
     
     - name: Run linting
       run: |
         pip install flake8
-        flake8 .
+        flake8 . --max-line-length=79 --exclude=.git,__pycache__,build,dist
     
     - name: Run security checks
       run: |
-        bandit -r .
+        bandit -r . -f json -o bandit-results.json
         safety check
+    
+    - name: Verify AWS Credentials
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      run: |
+        if [ -z "$AWS_ACCESS_KEY_ID" ] || [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+          echo "AWS credentials not found in GitHub Secrets"
+          exit 1
+        fi
+        # Verify credentials are valid
+        aws sts get-caller-identity || exit 1
+    
+    - name: Run AWS Security Scan
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      run: |
+        # Run all scanner modules
+        python -c "
+        from scanner import s3, iam, ec2, sg
+        import json
+        
+        findings = []
+        findings.extend(s3.scan())
+        findings.extend(iam.scan())
+        findings.extend(ec2.scan())
+        findings.extend(sg.scan())
+        
+        # Sanitize findings to remove sensitive data
+        sanitized_findings = []
+        for finding in findings:
+            sanitized = finding.copy()
+            # Remove or mask sensitive data
+            if 'resource' in sanitized:
+                sanitized['resource'] = 'REDACTED'
+            if 'details' in sanitized:
+                sanitized['details'] = 'REDACTED'
+            sanitized_findings.append(sanitized)
+        
+        # Save sanitized findings to file
+        with open('aws-scan-results.json', 'w') as f:
+            json.dump(sanitized_findings, f, indent=2)
+        "
+        
+        # Check if any high risk findings
+        if jq -e '.[] | select(.risk == \"HIGH\")' aws-scan-results.json > /dev/null; then
+          echo "High risk findings detected!"
+          cat aws-scan-results.json
+          exit 1
+        fi
     
     - name: Run tests with coverage
       env:
@@ -66,3 +129,47 @@ jobs:
         fi
         docker build -t aws-auditor .
         docker run --rm aws-auditor pytest
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          coverage.xml
+          bandit-results.json
+          aws-scan-results.json
+        retention-days: 7
+        if-no-files-found: error
+
+    - name: Create Security Report
+      if: always()
+      run: |
+        echo "## Security Scan Summary" > security-report.md
+        echo "**WARNING: This is a public repository. Sensitive data has been redacted.**" >> security-report.md
+        echo "" >> security-report.md
+        echo "### High Risk Findings" >> security-report.md
+        jq -r '.[] | select(.risk == "HIGH") | "- " + .issue' aws-scan-results.json >> security-report.md || echo "No high risk findings" >> security-report.md
+        echo "" >> security-report.md
+        echo "### Medium Risk Findings" >> security-report.md
+        jq -r '.[] | select(.risk == "MEDIUM") | "- " + .issue' aws-scan-results.json >> security-report.md || echo "No medium risk findings" >> security-report.md
+
+    - name: Upload Security Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-report
+        path: security-report.md
+        retention-days: 7
+
+    - name: Notify on failure
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'CI/CD Pipeline Failed',
+            body: 'The CI/CD pipeline has failed. Please check the workflow run for details.'
+          })
