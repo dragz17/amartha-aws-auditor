@@ -168,6 +168,26 @@ jobs:
           # exit 1
         fi
 
+    - name: Create Jira Tickets
+      if: always()
+      env:
+        JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+        JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+        JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+      run: |
+        # Update config.yaml with Jira credentials
+        cat > config.yaml << EOL
+        jira:
+          domain: ${{ secrets.JIRA_DOMAIN }}
+          email: ${{ secrets.JIRA_EMAIL }}
+          api_token: ${{ secrets.JIRA_API_TOKEN }}
+          project_key: ${{ secrets.JIRA_PROJECT_KEY }}
+        EOL
+        
+        # Run the create_ticket script
+        python jira/create_ticket.py
+
     - name: Create Security Report
       if: always()
       run: |
