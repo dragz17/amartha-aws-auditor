@@ -73,8 +73,7 @@ jobs:
         SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
       run: |
-        # Run all scanner modules
-        python -c "
+        cat > scan.py << 'EOL'
         from scanner import s3, iam, ec2, sg
         from alert.email import send_email_alert
         from alert.slack import send_slack_alert
@@ -92,53 +91,53 @@ jobs:
         for finding in findings:
             sanitized = finding.copy()
             # Only redact sensitive parts of resource names
-            if 'resource' in sanitized:
-                resource = sanitized['resource']
+            if "resource" in sanitized:
+                resource = sanitized["resource"]
                 # Keep resource IDs but redact sensitive parts
                 if isinstance(resource, str):
-                    if 'arn:aws:' in resource:
+                    if "arn:aws:" in resource:
                         # For ARNs, keep service and resource type but redact account and name
-                        parts = resource.split(':')
+                        parts = resource.split(":")
                         if len(parts) >= 6:
-                            sanitized['resource'] = parts[2] + ':' + parts[5]
-                    elif 'i-' in resource:
+                            sanitized["resource"] = parts[2] + ":" + parts[5]
+                    elif "i-" in resource:
                         # For EC2 instances, keep instance ID
-                        sanitized['resource'] = resource
-                    elif 'sg-' in resource:
+                        sanitized["resource"] = resource
+                    elif "sg-" in resource:
                         # For security groups, keep group ID
-                        sanitized['resource'] = resource
-                    elif 'vol-' in resource:
+                        sanitized["resource"] = resource
+                    elif "vol-" in resource:
                         # For volumes, keep volume ID
-                        sanitized['resource'] = resource
+                        sanitized["resource"] = resource
                     else:
                         # For other resources, redact if it might contain sensitive info
-                        sanitized['resource'] = 'REDACTED'
+                        sanitized["resource"] = "REDACTED"
             
             # Redact sensitive details but keep non-sensitive information
-            if 'details' in sanitized:
-                details = sanitized['details']
+            if "details" in sanitized:
+                details = sanitized["details"]
                 if isinstance(details, str):
-                    if any(sensitive in details.lower() for sensitive in ['password', 'key', 'secret', 'token']):
-                        sanitized['details'] = 'REDACTED'
+                    if any(sensitive in details.lower() for sensitive in ["password", "key", "secret", "token"]):
+                        sanitized["details"] = "REDACTED"
             
             sanitized_findings.append(sanitized)
         
         # Save sanitized findings to file
-        with open('aws-scan-results.json', 'w') as f:
+        with open("aws-scan-results.json", "w") as f:
             json.dump(sanitized_findings, f, indent=2)
             
         # Send notifications for high and medium risk findings
-        high_risk_findings = [f for f in findings if f['risk'] == 'HIGH']
-        medium_risk_findings = [f for f in findings if f['risk'] == 'MEDIUM']
+        high_risk_findings = [f for f in findings if f["risk"] == "HIGH"]
+        medium_risk_findings = [f for f in findings if f["risk"] == "MEDIUM"]
         
         # Prepare email config
         email_config = {
-            'smtp_server': os.getenv('SMTP_SERVER'),
-            'smtp_port': int(os.getenv('SMTP_PORT', 587)),
-            'username': os.getenv('SMTP_USERNAME'),
-            'password': os.getenv('SMTP_PASSWORD'),
-            'sender': os.getenv('SMTP_USERNAME'),
-            'recipient': os.getenv('EMAIL_RECIPIENT')
+            "smtp_server": os.getenv("SMTP_SERVER"),
+            "smtp_port": int(os.getenv("SMTP_PORT", 587)),
+            "username": os.getenv("SMTP_USERNAME"),
+            "password": os.getenv("SMTP_PASSWORD"),
+            "sender": os.getenv("SMTP_USERNAME"),
+            "recipient": os.getenv("EMAIL_RECIPIENT")
         }
         
         # Send email alerts
@@ -146,17 +145,20 @@ jobs:
             send_email_alert(high_risk_findings + medium_risk_findings, email_config)
             
         # Send Slack alerts for high risk findings
-        slack_webhook = os.getenv('SLACK_WEBHOOK_URL')
-        print(f"Slack webhook URL present: {'Yes' if slack_webhook else 'No'}")
+        slack_webhook = os.getenv("SLACK_WEBHOOK_URL")
+        print(f"Slack webhook URL present: {\"Yes\" if slack_webhook else \"No\"}")
         if slack_webhook:
             print(f"Number of high risk findings: {len(high_risk_findings)}")
             for finding in high_risk_findings:
                 try:
                     send_slack_alert(finding, slack_webhook)
-                    print(f"Successfully sent Slack alert for finding: {finding['issue']}")
+                    print(f"Successfully sent Slack alert for finding: {finding[\"issue\"]}")
                 except Exception as e:
                     print(f"Failed to send Slack alert: {e}")
-        "
+        EOL
+        
+        # Run the Python script
+        python scan.py
         
         # Check if any high risk findings
         if jq -e '.[] | select(.risk == "HIGH")' aws-scan-results.json > /dev/null; then
