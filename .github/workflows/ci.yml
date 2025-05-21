@@ -89,6 +89,8 @@ jobs:
         sanitized_findings = []
         for finding in findings:
             sanitized = finding.copy()
+            # Store original resource before sanitization
+            sanitized['original_resource'] = finding['resource']
             # Only redact sensitive parts of resource names
             if "resource" in sanitized:
                 resource = sanitized["resource"]

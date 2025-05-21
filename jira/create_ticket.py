@@ -52,21 +52,71 @@ def get_issue_types(config):
         return None
 
 
+def find_existing_ticket(config, summary):
+    """Find existing ticket with the same summary."""
+    try:
+        # JQL query to find tickets with exact summary match
+        jql = (
+            f'project = {config["jira"]["project_key"]} '
+            f'AND summary ~ "\\"{summary}\\""'
+        )
+        api_url = (
+            f"https://{config['jira']['domain']}.atlassian.net"
+            "/rest/api/2/search"
+        )
+        auth = HTTPBasicAuth(
+            config['jira']['email'],
+            config['jira']['api_token']
+        )
+
+        response = requests.get(
+            api_url,
+            params={'jql': jql},
+            auth=auth,
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            results = response.json()
+            if results['total'] > 0:
+                # Return the most recent ticket
+                return results['issues'][0]['key']
+        return None
+
+    except Exception as e:
+        print(f"Error searching for existing ticket: {e}")
+        return None
+
+
 def create_jira_ticket(finding, config, issue_type_id):
     """Create a Jira ticket for a security finding."""
     try:
         # Prepare the ticket data
+        summary = (
+            f"AWS Security Finding: {finding['type']} - "
+            f"{finding['issue']}"
+        )
+        
+        # Check for existing ticket
+        existing_ticket = find_existing_ticket(config, summary)
+        if existing_ticket:
+            print(
+                f"Found existing ticket {existing_ticket} for finding: "
+                f"{finding['issue']}"
+            )
+            return existing_ticket
+
+        # Get original resource from finding
+        original_resource = finding.get('original_resource', finding['resource'])
+
         ticket_data = {
             "fields": {
                 "project": {
                     "key": config['jira']['project_key']
                 },
-                "summary": (
-                    f"AWS Security Finding: {finding['type']} - "
-                    f"{finding['issue']}"
-                ),
+                "summary": summary,
                 "description": (
-                    f"*Resource:* {finding['resource']}\n"
+                    f"*Resource:* {original_resource}\n"
                     f"*Type:* {finding['type']}\n"
                     f"*Risk Level:* {finding['risk']}\n"
                     f"*Issue:* {finding['issue']}\n"
@@ -150,7 +200,7 @@ def process_findings():
                 ticket_key = create_jira_ticket(finding, config, issue_type_id)
                 if ticket_key:
                     print(
-                        f"Created ticket {ticket_key} for finding: "
+                        f"Created/found ticket {ticket_key} for finding: "
                         f"{finding['issue']}"
                     )
                 else:
