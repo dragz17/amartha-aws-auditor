@@ -6,5 +6,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY . .
+RUN pip install -e .  # Install package in development mode
 
-CMD ["python", "main.py"]
+CMD ["pytest"]

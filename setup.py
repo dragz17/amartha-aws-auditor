@@ -1,14 +1,20 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="amartha-aws-auditor",
+    name="aws-auditor",
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "boto3",
         "fastapi",
+        "boto3",
+        "uvicorn",
+        "PyYAML",
         "requests",
-        "pyyaml",
+        "secure-smtplib",
+        "pytest",
+        "pytest-cov",
+        "bandit",
+        "safety"
     ],
     python_requires=">=3.10",
 )
