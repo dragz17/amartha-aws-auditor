@@ -2,6 +2,10 @@ import requests
 
 
 def send_slack_alert(finding, webhook_url):
+    if not webhook_url:
+        print("Error: Slack webhook URL is empty")
+        return
+
     message = {
         "text": (
             f"🚨 *AWS Security Alert*\n"
@@ -15,11 +19,17 @@ def send_slack_alert(finding, webhook_url):
     }
 
     try:
+        print(f"Sending Slack alert to webhook: {webhook_url[:20]}...")
         response = requests.post(
             webhook_url,
             json=message,
             timeout=10  # Adding 10 second timeout
         )
         response.raise_for_status()
+        print("Slack alert sent successfully")
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send Slack alert: {str(e)}")
+        if hasattr(e.response, 'text'):
+            print(f"Response text: {e.response.text}")
     except Exception as e:
-        print(f"Failed to send Slack alert: {e}")
+        print(f"Unexpected error sending Slack alert: {str(e)}")
