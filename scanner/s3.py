@@ -96,7 +96,8 @@ def scan():
                     )
                 })
         except ClientError as e:
-            if e.response['Error']['Code'] == 'ServerSideEncryptionConfigurationNotFoundError':
+            if (e.response['Error']['Code'] ==
+                    'ServerSideEncryptionConfigurationNotFoundError'):
                 findings.append({
                     "resource": bucket_name,
                     "type": "S3 Bucket",
