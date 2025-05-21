@@ -30,11 +30,15 @@ def scan():
             })
 
         # Check access keys
-        access_keys = iam.list_access_keys(UserName=user_name)['AccessKeyMetadata']
+        access_keys = iam.list_access_keys(
+            UserName=user_name
+        )['AccessKeyMetadata']
         for key in access_keys:
             if key['Status'] == 'Active':
                 findings.append({
-                    "resource": f"{user_name} - {key['AccessKeyId']}",
+                    "resource": (
+                        f"{user_name} - {key['AccessKeyId']}"
+                    ),
                     "type": "IAM Access Key",
                     "risk": (
                         cis_rules["iam_root_access_key"]["risk_level"]
@@ -49,7 +53,9 @@ def scan():
                 })
 
         # Inline policies
-        inline_policies = iam.list_user_policies(UserName=user_name)['PolicyNames']
+        inline_policies = iam.list_user_policies(
+            UserName=user_name
+        )['PolicyNames']
         for policy_name in inline_policies:
             policy_doc = iam.get_user_policy(
                 UserName=user_name,

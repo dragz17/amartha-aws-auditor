@@ -43,7 +43,9 @@ def scan():
                             cis_rules["ec2_termination_protection"]
                             ["risk_level"]
                         ),
-                        "issue": "Instance termination protection is not enabled",
+                        "issue": (
+                            "Instance termination protection is not enabled"
+                        ),
                         "cis_rule": (
                             cis_rules["ec2_termination_protection"]
                             ["cis_rule"]
@@ -55,7 +57,8 @@ def scan():
                     })
             except Exception as e:
                 print(
-                    f"Error checking termination protection for {instance_id}: {e}"
+                    f"Error checking termination protection for "
+                    f"{instance_id}: {e}"
                 )
 
             # Check volume encryption
@@ -68,7 +71,9 @@ def scan():
                         )['Volumes'][0]
                         if not volume.get('Encrypted'):
                             findings.append({
-                                "resource": f"{instance_id} - {volume_id}",
+                                "resource": (
+                                    f"{instance_id} - {volume_id}"
+                                ),
                                 "type": "EC2 Volume",
                                 "risk": (
                                     cis_rules["ec2_unencrypted_volumes"]
@@ -86,7 +91,8 @@ def scan():
                             })
                     except Exception as e:
                         print(
-                            f"Error checking volume encryption for {volume_id}: {e}"
+                            f"Error checking volume encryption for "
+                            f"{volume_id}: {e}"
                         )
 
     # Check public snapshots
