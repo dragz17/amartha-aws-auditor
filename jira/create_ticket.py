@@ -2,10 +2,11 @@ import requests
 from requests.auth import HTTPBasicAuth
 import yaml
 import json
-import os
 from datetime import datetime
 
+
 def load_config():
+    """Load configuration from YAML file."""
     try:
         with open('config.yaml') as f:
             return yaml.safe_load(f)
@@ -13,8 +14,9 @@ def load_config():
         print(f"Error loading config: {e}")
         return None
 
+
 def create_jira_ticket(finding, config):
-    """Create a Jira ticket for a security finding"""
+    """Create a Jira ticket for a security finding."""
     try:
         # Prepare the ticket data
         ticket_data = {
@@ -22,18 +24,21 @@ def create_jira_ticket(finding, config):
                 "project": {
                     "key": config['jira']['project_key']
                 },
-                "summary": f"AWS Security Finding: {finding['type']} - {finding['issue']}",
-                "description": f"""
-*Resource:* {finding['resource']}
-*Type:* {finding['type']}
-*Risk Level:* {finding['risk']}
-*Issue:* {finding['issue']}
-*CIS Rule:* {finding['cis_rule']}
-*Remediation:* {finding['remediation']}
-*Found At:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-                """,
+                "summary": (
+                    f"AWS Security Finding: {finding['type']} - "
+                    f"{finding['issue']}"
+                ),
+                "description": (
+                    f"*Resource:* {finding['resource']}\n"
+                    f"*Type:* {finding['type']}\n"
+                    f"*Risk Level:* {finding['risk']}\n"
+                    f"*Issue:* {finding['issue']}\n"
+                    f"*CIS Rule:* {finding['cis_rule']}\n"
+                    f"*Remediation:* {finding['remediation']}\n"
+                    f"*Found At:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                ),
                 "issuetype": {
-                    "name": "Bug"  # You might want to adjust this based on your Jira setup
+                    "name": "Bug"  # Adjust based on your Jira setup
                 },
                 "priority": {
                     "name": "High" if finding['risk'] == "HIGH" else "Medium"
@@ -42,8 +47,14 @@ def create_jira_ticket(finding, config):
         }
 
         # Make the API call to create the ticket
-        api_url = f"https://{config['jira']['domain']}.atlassian.net/rest/api/2/issue"
-        auth = HTTPBasicAuth(config['jira']['email'], config['jira']['api_token'])
+        api_url = (
+            f"https://{config['jira']['domain']}.atlassian.net"
+            "/rest/api/2/issue"
+        )
+        auth = HTTPBasicAuth(
+            config['jira']['email'],
+            config['jira']['api_token']
+        )
         
         response = requests.post(
             api_url,
@@ -58,15 +69,19 @@ def create_jira_ticket(finding, config):
             print(f"Successfully created Jira ticket: {ticket['key']}")
             return ticket['key']
         else:
-            print(f"Failed to create Jira ticket: {response.status_code} - {response.text}")
+            print(
+                f"Failed to create Jira ticket: "
+                f"{response.status_code} - {response.text}"
+            )
             return None
 
     except Exception as e:
         print(f"Error creating Jira ticket: {e}")
         return None
 
+
 def process_findings():
-    """Process security findings and create Jira tickets"""
+    """Process security findings and create Jira tickets."""
     try:
         # Load config
         config = load_config()
@@ -82,12 +97,19 @@ def process_findings():
             if finding['risk'] in ['HIGH', 'MEDIUM']:
                 ticket_key = create_jira_ticket(finding, config)
                 if ticket_key:
-                    print(f"Created ticket {ticket_key} for finding: {finding['issue']}")
+                    print(
+                        f"Created ticket {ticket_key} for finding: "
+                        f"{finding['issue']}"
+                    )
                 else:
-                    print(f"Failed to create ticket for finding: {finding['issue']}")
+                    print(
+                        f"Failed to create ticket for finding: "
+                        f"{finding['issue']}"
+                    )
 
     except Exception as e:
         print(f"Error processing findings: {e}")
+
 
 if __name__ == "__main__":
     process_findings()
