@@ -66,11 +66,20 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+        SMTP_PORT: ${{ secrets.SMTP_PORT }}
+        SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+        SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
       run: |
         # Run all scanner modules
         python -c "
         from scanner import s3, iam, ec2, sg
+        from alert.email import send_email_alert
+        from alert.slack import send_slack_alert
         import json
+        import os
         
         findings = []
         findings.extend(s3.scan())
@@ -82,20 +91,69 @@ jobs:
         sanitized_findings = []
         for finding in findings:
             sanitized = finding.copy()
-            # Remove or mask sensitive data
+            # Only redact sensitive parts of resource names
             if 'resource' in sanitized:
-                sanitized['resource'] = 'REDACTED'
+                resource = sanitized['resource']
+                # Keep resource IDs but redact sensitive parts
+                if isinstance(resource, str):
+                    if 'arn:aws:' in resource:
+                        # For ARNs, keep service and resource type but redact account and name
+                        parts = resource.split(':')
+                        if len(parts) >= 6:
+                            sanitized['resource'] = f"{parts[2]}:{parts[5]}"
+                    elif 'i-' in resource:
+                        # For EC2 instances, keep instance ID
+                        sanitized['resource'] = resource
+                    elif 'sg-' in resource:
+                        # For security groups, keep group ID
+                        sanitized['resource'] = resource
+                    elif 'vol-' in resource:
+                        # For volumes, keep volume ID
+                        sanitized['resource'] = resource
+                    else:
+                        # For other resources, redact if it might contain sensitive info
+                        sanitized['resource'] = 'REDACTED'
+            
+            # Redact sensitive details but keep non-sensitive information
             if 'details' in sanitized:
-                sanitized['details'] = 'REDACTED'
+                details = sanitized['details']
+                if isinstance(details, str):
+                    if any(sensitive in details.lower() for sensitive in ['password', 'key', 'secret', 'token']):
+                        sanitized['details'] = 'REDACTED'
+            
             sanitized_findings.append(sanitized)
         
         # Save sanitized findings to file
         with open('aws-scan-results.json', 'w') as f:
             json.dump(sanitized_findings, f, indent=2)
+            
+        # Send notifications for high and medium risk findings
+        high_risk_findings = [f for f in findings if f['risk'] == 'HIGH']
+        medium_risk_findings = [f for f in findings if f['risk'] == 'MEDIUM']
+        
+        # Prepare email config
+        email_config = {
+            'smtp_server': os.getenv('SMTP_SERVER'),
+            'smtp_port': int(os.getenv('SMTP_PORT', 587)),
+            'username': os.getenv('SMTP_USERNAME'),
+            'password': os.getenv('SMTP_PASSWORD'),
+            'sender': os.getenv('SMTP_USERNAME'),
+            'recipient': os.getenv('EMAIL_RECIPIENT')
+        }
+        
+        # Send email alerts
+        if high_risk_findings or medium_risk_findings:
+            send_email_alert(high_risk_findings + medium_risk_findings, email_config)
+            
+        # Send Slack alerts for high risk findings
+        slack_webhook = os.getenv('SLACK_WEBHOOK_URL')
+        if slack_webhook:
+            for finding in high_risk_findings:
+                send_slack_alert(finding, slack_webhook)
         "
         
         # Check if any high risk findings
-        if jq -e '.[] | select(.risk == \"HIGH\")' aws-scan-results.json > /dev/null; then
+        if jq -e '.[] | select(.risk == "HIGH")' aws-scan-results.json > /dev/null; then
           echo "High risk findings detected!"
           cat aws-scan-results.json
           exit 1
@@ -145,10 +203,10 @@ jobs:
         echo "**WARNING: This is a public repository. Sensitive data has been redacted.**" >> security-report.md
         echo "" >> security-report.md
         echo "### High Risk Findings" >> security-report.md
-        jq -r '.[] | select(.risk == "HIGH") | "- " + .issue' aws-scan-results.json >> security-report.md || echo "No high risk findings" >> security-report.md
+        jq -r '.[] | select(.risk == "HIGH") | "- " + .type + ": " + .resource + "\n  Issue: " + .issue + "\n  CIS Rule: " + .cis_rule + "\n  Remediation: " + .remediation' aws-scan-results.json >> security-report.md || echo "No high risk findings" >> security-report.md
         echo "" >> security-report.md
         echo "### Medium Risk Findings" >> security-report.md
-        jq -r '.[] | select(.risk == "MEDIUM") | "- " + .issue' aws-scan-results.json >> security-report.md || echo "No medium risk findings" >> security-report.md
+        jq -r '.[] | select(.risk == "MEDIUM") | "- " + .type + ": " + .resource + "\n  Issue: " + .issue + "\n  CIS Rule: " + .cis_rule + "\n  Remediation: " + .remediation' aws-scan-results.json >> security-report.md || echo "No medium risk findings" >> security-report.md
 
     - name: Upload Security Report
       if: always()
