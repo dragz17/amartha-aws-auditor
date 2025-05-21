@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch
+from botocore.exceptions import ClientError
 from scanner.iam import scan
 
 
@@ -27,6 +28,11 @@ def test_scan_iam_user_without_mfa(mock_iam_client):
     }
     mock_iam_client.list_access_keys.return_value = {
         'AccessKeyMetadata': []
+    }
+    mock_iam_client.get_account_password_policy.return_value = {
+        'PasswordPolicy': {
+            'RequireUppercaseCharacters': True
+        }
     }
 
     # Run scan
@@ -65,6 +71,11 @@ def test_scan_iam_overly_permissive_policy(mock_iam_client):
     }
     mock_iam_client.list_access_keys.return_value = {
         'AccessKeyMetadata': []
+    }
+    mock_iam_client.get_account_password_policy.return_value = {
+        'PasswordPolicy': {
+            'RequireUppercaseCharacters': True
+        }
     }
 
     # Run scan

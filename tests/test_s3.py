@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import Mock, patch
+from botocore.exceptions import ClientError
 from scanner.s3 import scan
 
 
@@ -133,8 +134,14 @@ def test_scan_s3_encryption_disabled(mock_s3_client):
     mock_s3_client.get_bucket_logging.return_value = {
         'LoggingEnabled': True
     }
-    mock_s3_client.get_bucket_encryption.side_effect = Exception(
-        'ServerSideEncryptionConfigurationNotFoundError'
+    mock_s3_client.get_bucket_encryption.side_effect = ClientError(
+        {
+            'Error': {
+                'Code': 'ServerSideEncryptionConfigurationNotFoundError',
+                'Message': 'The server side encryption configuration was not found'
+            }
+        },
+        'GetBucketEncryption'
     )
 
     # Run scan
