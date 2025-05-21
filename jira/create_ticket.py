@@ -11,7 +11,11 @@ api_url = (
 )
 auth = HTTPBasicAuth(config['jira']['email'], config['jira']['api_token'])
 
-response = requests.get(api_url, auth=auth)
+response = requests.get(
+    api_url,
+    auth=auth,
+    timeout=10  # Adding 10 second timeout
+)
 
 # Debugging response
 print(f"Response Status Code: {response.status_code}")
