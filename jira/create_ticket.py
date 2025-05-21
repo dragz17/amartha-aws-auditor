@@ -56,7 +56,7 @@ def create_jira_ticket(finding, config):
             config['jira']['email'],
             config['jira']['api_token']
         )
-        
+
         response = requests.post(
             api_url,
             json=ticket_data,
