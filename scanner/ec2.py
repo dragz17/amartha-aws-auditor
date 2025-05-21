@@ -1,6 +1,7 @@
 import boto3
 from .rules import cis_rules
 
+
 def scan():
     findings = []
     ec2 = boto3.client('ec2')
@@ -19,7 +20,9 @@ def scan():
                         "risk": cis_rules["ec2_public_ip"]["risk_level"],
                         "issue": "Instance has public IP",
                         "cis_rule": cis_rules["ec2_public_ip"]["cis_rule"],
-                        "remediation": cis_rules["ec2_public_ip"]["remediation"]
+                        "remediation": (
+                            cis_rules["ec2_public_ip"]["remediation"]
+                        )
                     })
 
             # Check termination protection
@@ -32,10 +35,19 @@ def scan():
                     findings.append({
                         "resource": instance_id,
                         "type": "EC2 Instance",
-                        "risk": cis_rules["ec2_termination_protection"]["risk_level"],
+                        "risk": (
+                            cis_rules["ec2_termination_protection"]
+                            ["risk_level"]
+                        ),
                         "issue": "Instance termination protection is not enabled",
-                        "cis_rule": cis_rules["ec2_termination_protection"]["cis_rule"],
-                        "remediation": cis_rules["ec2_termination_protection"]["remediation"]
+                        "cis_rule": (
+                            cis_rules["ec2_termination_protection"]
+                            ["cis_rule"]
+                        ),
+                        "remediation": (
+                            cis_rules["ec2_termination_protection"]
+                            ["remediation"]
+                        )
                     })
             except Exception as e:
                 print(f"Error checking termination protection for {instance_id}: {e}")
@@ -45,15 +57,26 @@ def scan():
                 if 'Ebs' in block_device:
                     volume_id = block_device['Ebs']['VolumeId']
                     try:
-                        volume = ec2.describe_volumes(VolumeIds=[volume_id])['Volumes'][0]
+                        volume = ec2.describe_volumes(
+                            VolumeIds=[volume_id]
+                        )['Volumes'][0]
                         if not volume.get('Encrypted'):
                             findings.append({
                                 "resource": f"{instance_id} - {volume_id}",
                                 "type": "EC2 Volume",
-                                "risk": cis_rules["ec2_unencrypted_volumes"]["risk_level"],
+                                "risk": (
+                                    cis_rules["ec2_unencrypted_volumes"]
+                                    ["risk_level"]
+                                ),
                                 "issue": "Volume is not encrypted",
-                                "cis_rule": cis_rules["ec2_unencrypted_volumes"]["cis_rule"],
-                                "remediation": cis_rules["ec2_unencrypted_volumes"]["remediation"]
+                                "cis_rule": (
+                                    cis_rules["ec2_unencrypted_volumes"]
+                                    ["cis_rule"]
+                                ),
+                                "remediation": (
+                                    cis_rules["ec2_unencrypted_volumes"]
+                                    ["remediation"]
+                                )
                             })
                     except Exception as e:
                         print(f"Error checking volume encryption for {volume_id}: {e}")
@@ -71,12 +94,24 @@ def scan():
                     findings.append({
                         "resource": snapshot['SnapshotId'],
                         "type": "EC2 Snapshot",
-                        "risk": cis_rules["ec2_public_snapshot"]["risk_level"],
+                        "risk": (
+                            cis_rules["ec2_public_snapshot"]
+                            ["risk_level"]
+                        ),
                         "issue": "Snapshot is publicly accessible",
-                        "cis_rule": cis_rules["ec2_public_snapshot"]["cis_rule"],
-                        "remediation": cis_rules["ec2_public_snapshot"]["remediation"]
+                        "cis_rule": (
+                            cis_rules["ec2_public_snapshot"]
+                            ["cis_rule"]
+                        ),
+                        "remediation": (
+                            cis_rules["ec2_public_snapshot"]
+                            ["remediation"]
+                        )
                     })
         except Exception as e:
-            print(f"Error checking snapshot permissions for {snapshot['SnapshotId']}: {e}")
+            print(
+                f"Error checking snapshot permissions for "
+                f"{snapshot['SnapshotId']}: {e}"
+            )
 
     return findings
