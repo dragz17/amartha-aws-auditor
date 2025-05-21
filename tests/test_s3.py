@@ -138,7 +138,9 @@ def test_scan_s3_encryption_disabled(mock_s3_client):
         {
             'Error': {
                 'Code': 'ServerSideEncryptionConfigurationNotFoundError',
-                'Message': 'The server side encryption configuration was not found'
+                'Message': (
+                    'The server side encryption configuration was not found'
+                )
             }
         },
         'GetBucketEncryption'
