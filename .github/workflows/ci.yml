@@ -146,13 +146,13 @@ jobs:
             
         # Send Slack alerts for high risk findings
         slack_webhook = os.getenv("SLACK_WEBHOOK_URL")
-        print(f"Slack webhook URL present: {\"Yes\" if slack_webhook else \"No\"}")
+        print(f"Slack webhook URL present: {'Yes' if slack_webhook else 'No'}")
         if slack_webhook:
             print(f"Number of high risk findings: {len(high_risk_findings)}")
             for finding in high_risk_findings:
                 try:
                     send_slack_alert(finding, slack_webhook)
-                    print(f"Successfully sent Slack alert for finding: {finding[\"issue\"]}")
+                    print(f"Successfully sent Slack alert for finding: {finding['issue']}")
                 except Exception as e:
                     print(f"Failed to send Slack alert: {e}")
         EOL
