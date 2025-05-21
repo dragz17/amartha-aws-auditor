@@ -2,12 +2,14 @@ import pytest
 from unittest.mock import Mock, patch
 from scanner.ec2 import scan
 
+
 @pytest.fixture
 def mock_ec2_client():
     with patch('boto3.client') as mock_client:
         ec2 = Mock()
         mock_client.return_value = ec2
         yield ec2
+
 
 def test_scan_ec2_public_ip(mock_ec2_client):
     # Setup mock response
@@ -29,6 +31,7 @@ def test_scan_ec2_public_ip(mock_ec2_client):
     assert len(findings) > 0
     assert any(f['issue'] == 'Instance has public IP' for f in findings)
 
+
 def test_scan_ec2_termination_protection(mock_ec2_client):
     # Setup mock response
     mock_ec2_client.describe_instances.return_value = {
@@ -48,7 +51,11 @@ def test_scan_ec2_termination_protection(mock_ec2_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Instance termination protection is not enabled' for f in findings)
+    assert any(
+        f['issue'] == 'Instance termination protection is not enabled'
+        for f in findings
+    )
+
 
 def test_scan_ec2_unencrypted_volumes(mock_ec2_client):
     # Setup mock response
@@ -76,6 +83,7 @@ def test_scan_ec2_unencrypted_volumes(mock_ec2_client):
     # Assert
     assert len(findings) > 0
     assert any(f['issue'] == 'Volume is not encrypted' for f in findings)
+
 
 def test_scan_ec2_public_snapshot(mock_ec2_client):
     # Setup mock response

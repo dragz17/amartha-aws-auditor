@@ -11,10 +11,12 @@ app = FastAPI()
 security = HTTPBasic()
 config = ConfigLoader()
 
+
 def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
     if not verify_credentials(credentials.username, credentials.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     return credentials.username
+
 
 @app.get("/scan/s3")
 def scan_s3(user: str = Depends(get_current_user)):
@@ -22,11 +24,13 @@ def scan_s3(user: str = Depends(get_current_user)):
     send_alerts(results)
     return results
 
+
 @app.get("/scan/iam")
 def scan_iam(user: str = Depends(get_current_user)):
     results = iam.scan()
     send_alerts(results)
     return results
+
 
 @app.get("/scan/ec2")
 def scan_ec2(user: str = Depends(get_current_user)):
@@ -34,15 +38,18 @@ def scan_ec2(user: str = Depends(get_current_user)):
     send_alerts(results)
     return results
 
+
 @app.get("/scan/security-groups")
 def scan_sg(user: str = Depends(get_current_user)):
     results = sg.scan()
     send_alerts(results)
     return results
 
+
 @app.get("/report")
 def report(user: str = Depends(get_current_user)):
     return generate_report()
+
 
 def send_alerts(results):
     # Group findings by risk level

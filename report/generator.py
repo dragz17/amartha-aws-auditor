@@ -11,5 +11,3 @@ def generate_report(findings=None):
     }
 
     return report
-
-

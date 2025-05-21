@@ -2,12 +2,14 @@ import pytest
 from unittest.mock import Mock, patch
 from scanner.iam import scan
 
+
 @pytest.fixture
 def mock_iam_client():
     with patch('boto3.client') as mock_client:
         iam = Mock()
         mock_client.return_value = iam
         yield iam
+
 
 def test_scan_iam_user_without_mfa(mock_iam_client):
     # Setup mock response
@@ -30,6 +32,7 @@ def test_scan_iam_user_without_mfa(mock_iam_client):
     # Assert
     assert len(findings) > 0
     assert any(f['issue'] == 'User does not have MFA enabled' for f in findings)
+
 
 def test_scan_iam_overly_permissive_policy(mock_iam_client):
     # Setup mock response
@@ -62,6 +65,7 @@ def test_scan_iam_overly_permissive_policy(mock_iam_client):
     assert len(findings) > 0
     assert any(f['issue'] == 'Inline policy is overly permissive' for f in findings)
 
+
 def test_scan_iam_password_policy(mock_iam_client):
     # Setup mock response
     mock_iam_client.list_users.return_value = {
@@ -87,4 +91,7 @@ def test_scan_iam_password_policy(mock_iam_client):
 
     # Assert
     assert len(findings) > 0
-    assert any(f['issue'] == 'Password policy does not require uppercase letters' for f in findings) 
+    assert any(
+        f['issue'] == 'Password policy does not require uppercase letters'
+        for f in findings
+    ) 

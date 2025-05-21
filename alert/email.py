@@ -28,4 +28,3 @@ def send_email_alert(findings, config):
         server.quit()
     except Exception as e:
         print(f"Failed to send email: {e}")
-

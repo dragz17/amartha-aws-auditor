@@ -6,7 +6,9 @@ import yaml
 with open('config.yaml') as f:
     config = yaml.safe_load(f)
 
-api_url = f"https://{config['jira']['domain']}.atlassian.net/rest/api/2/issuetype"
+api_url = (
+    f"https://{config['jira']['domain']}.atlassian.net/rest/api/2/issuetype"
+)
 auth = HTTPBasicAuth(config['jira']['email'], config['jira']['api_token'])
 
 response = requests.get(api_url, auth=auth)
@@ -20,4 +22,6 @@ if response.status_code == 200:
     for issue_type in issue_types:
         print(f"ID: {issue_type['id']}, Name: {issue_type['name']}")
 else:
-    print(f"Failed to get issue types: {response.status_code} - {response.text}")
+    print(
+        f"Failed to get issue types: {response.status_code} - {response.text}"
+    )
