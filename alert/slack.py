@@ -1,13 +1,19 @@
 import requests
-from scanner.rules import cis_rules
 
-def send_slack_alert(data, webhook_url):
-    # Menyiapkan pesan
-    message = f"""*HIGH RISK ALERT*\nResource: {data['resource']}\nIssue: {data['issue']}"""
-    
-    # Menambahkan CIS Rule dan Remediation jika ada
-    if data.get('cis_rule') and data.get('remediation'):
-        message += f"""\nCIS Rule: {data['cis_rule']}\nRemediation: {data['remediation']}"""
-    
-    # Kirim ke Slack
-    requests.post(webhook_url, json={"text": message})
+
+def send_slack_alert(finding, webhook_url):
+    message = {
+        "text": f"*AWS Security Alert*\n"
+                f"Resource: {finding['resource']}\n"
+                f"Type: {finding['type']}\n"
+                f"Risk: {finding['risk']}\n"
+                f"Issue: {finding['issue']}\n"
+                f"CIS Rule: {finding['cis_rule']}\n"
+                f"Remediation: {finding['remediation']}"
+    }
+
+    try:
+        response = requests.post(webhook_url, json=message)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"Failed to send Slack alert: {e}")

@@ -3,64 +3,49 @@ import yaml
 from string import Template
 
 class ConfigLoader:
-    def __init__(self, config_path='config.yaml'):
-        self.config_path = config_path
+    def __init__(self, config_file='config.yaml'):
+        self.config_file = config_file
         self.config = self._load_config()
 
     def _load_config(self):
-        """Load configuration from YAML file or environment variables."""
-        # Check if running in GitHub Actions
-        if os.getenv('GITHUB_ACTIONS') == 'true':
-            return self._load_from_env()
-        else:
-            return self._load_from_yaml()
+        if not os.path.exists(self.config_file):
+            raise FileNotFoundError(f"Config file {self.config_file} not found")
 
-    def _load_from_env(self):
-        """Load configuration from environment variables (GitHub Actions)."""
-        return {
-            'auth': {
-                'username': os.getenv('AUTH_USERNAME'),
-                'password': os.getenv('AUTH_PASSWORD')
-            },
-            'email': {
-                'smtp_server': os.getenv('SMTP_SERVER'),
-                'smtp_port': os.getenv('SMTP_PORT'),
-                'username': os.getenv('SMTP_USERNAME'),
-                'password': os.getenv('SMTP_PASSWORD'),
-                'sender': os.getenv('EMAIL_SENDER'),
-                'recipient': os.getenv('EMAIL_RECIPIENT')
-            },
-            'slack': {
-                'webhook': os.getenv('SLACK_WEBHOOK')
-            },
-            'jira': {
-                'domain': os.getenv('JIRA_DOMAIN'),
-                'email': os.getenv('JIRA_EMAIL'),
-                'api_token': os.getenv('JIRA_API_TOKEN'),
-                'project_key': os.getenv('JIRA_PROJECT_KEY')
-            }
-        }
-
-    def _load_from_yaml(self):
-        """Load configuration from YAML file (local development)."""
-        if not os.path.exists(self.config_path):
-            raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
-
-        with open(self.config_path, 'r') as f:
+        with open(self.config_file, 'r') as f:
             return yaml.safe_load(f)
 
-    def get(self, key, default=None):
-        """Get configuration value by key."""
-        keys = key.split('.')
+    def get(self, key_path, default=None):
+        """Get config value using dot notation."""
+        keys = key_path.split('.')
         value = self.config
-        
-        for k in keys:
+
+        for key in keys:
             if isinstance(value, dict):
-                value = value.get(k)
+                value = value.get(key)
             else:
                 return default
-                
-        return value if value is not None else default
+
+            if value is None:
+                return default
+
+        return value
+
+    def set(self, key_path, value):
+        """Set config value using dot notation."""
+        keys = key_path.split('.')
+        config = self.config
+
+        for key in keys[:-1]:
+            if key not in config:
+                config[key] = {}
+            config = config[key]
+
+        config[keys[-1]] = value
+
+    def save(self):
+        """Save current config to file."""
+        with open(self.config_file, 'w') as f:
+            yaml.dump(self.config, f)
 
     def get_all(self):
         """Get all configuration values."""
