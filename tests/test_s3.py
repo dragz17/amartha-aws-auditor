@@ -24,6 +24,21 @@ def test_scan_s3_public_access(mock_s3_client):
             'Permission': 'READ'
         }]
     }
+    mock_s3_client.get_bucket_versioning.return_value = {
+        'Status': 'Enabled'
+    }
+    mock_s3_client.get_bucket_logging.return_value = {
+        'LoggingEnabled': True
+    }
+    mock_s3_client.get_bucket_encryption.return_value = {
+        'ServerSideEncryptionConfiguration': {
+            'Rules': [{
+                'ApplyServerSideEncryptionByDefault': {
+                    'SSEAlgorithm': 'AES256'
+                }
+            }]
+        }
+    }
 
     # Run scan
     findings = scan()
@@ -46,6 +61,18 @@ def test_scan_s3_versioning_disabled(mock_s3_client):
     }
     mock_s3_client.get_bucket_versioning.return_value = {
         'Status': 'Disabled'
+    }
+    mock_s3_client.get_bucket_logging.return_value = {
+        'LoggingEnabled': True
+    }
+    mock_s3_client.get_bucket_encryption.return_value = {
+        'ServerSideEncryptionConfiguration': {
+            'Rules': [{
+                'ApplyServerSideEncryptionByDefault': {
+                    'SSEAlgorithm': 'AES256'
+                }
+            }]
+        }
     }
 
     # Run scan
@@ -71,6 +98,15 @@ def test_scan_s3_logging_disabled(mock_s3_client):
         'Status': 'Enabled'
     }
     mock_s3_client.get_bucket_logging.return_value = {}
+    mock_s3_client.get_bucket_encryption.return_value = {
+        'ServerSideEncryptionConfiguration': {
+            'Rules': [{
+                'ApplyServerSideEncryptionByDefault': {
+                    'SSEAlgorithm': 'AES256'
+                }
+            }]
+        }
+    }
 
     # Run scan
     findings = scan()

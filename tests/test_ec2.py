@@ -23,6 +23,9 @@ def test_scan_ec2_public_ip(mock_ec2_client):
             }]
         }]
     }
+    mock_ec2_client.describe_snapshots.return_value = {
+        'Snapshots': []
+    }
 
     # Run scan
     findings = scan()
@@ -44,6 +47,9 @@ def test_scan_ec2_termination_protection(mock_ec2_client):
     }
     mock_ec2_client.describe_instance_attribute.return_value = {
         'DisableApiTermination': {'Value': False}
+    }
+    mock_ec2_client.describe_snapshots.return_value = {
+        'Snapshots': []
     }
 
     # Run scan
@@ -75,6 +81,9 @@ def test_scan_ec2_unencrypted_volumes(mock_ec2_client):
             'VolumeId': 'vol-1234567890',
             'Encrypted': False
         }]
+    }
+    mock_ec2_client.describe_snapshots.return_value = {
+        'Snapshots': []
     }
 
     # Run scan
