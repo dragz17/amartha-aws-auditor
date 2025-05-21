@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 from .rules import cis_rules
 
 
@@ -144,20 +145,23 @@ def scan():
                     cis_rules["iam_password_policy"]["remediation"]
                 )
             })
-    except iam.exceptions.NoSuchEntityException:
-        findings.append({
-            "resource": "IAM Password Policy",
-            "type": "IAM Policy",
-            "risk": (
-                cis_rules["iam_password_policy"]["risk_level"]
-            ),
-            "issue": "No password policy found",
-            "cis_rule": (
-                cis_rules["iam_password_policy"]["cis_rule"]
-            ),
-            "remediation": (
-                cis_rules["iam_password_policy"]["remediation"]
-            )
-        })
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'NoSuchEntity':
+            findings.append({
+                "resource": "IAM Password Policy",
+                "type": "IAM Policy",
+                "risk": (
+                    cis_rules["iam_password_policy"]["risk_level"]
+                ),
+                "issue": "No password policy found",
+                "cis_rule": (
+                    cis_rules["iam_password_policy"]["cis_rule"]
+                ),
+                "remediation": (
+                    cis_rules["iam_password_policy"]["remediation"]
+                )
+            })
+        else:
+            print(f"Error checking password policy: {e}")
 
     return findings

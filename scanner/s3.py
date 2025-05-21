@@ -1,4 +1,5 @@
 import boto3
+from botocore.exceptions import ClientError
 from .rules import cis_rules
 
 
@@ -13,8 +14,9 @@ def scan():
         # Check public access
         try:
             acl = s3.get_bucket_acl(Bucket=bucket_name)
-            for grant in acl['Grants']:
-                if (grant['Grantee'].get('URI') ==
+            for grant in acl.get('Grants', []):
+                grantee = grant.get('Grantee', {})
+                if (grantee.get('URI') ==
                         'http://acs.amazonaws.com/groups/global/AllUsers'):
                     findings.append({
                         "resource": bucket_name,
@@ -31,7 +33,7 @@ def scan():
                         )
                     })
         except Exception as e:
-            print(f"Error checking bucket ACL for {bucket_name}: {e}")
+            print(f"Error checking ACL for {bucket_name}: {e}")
 
         # Check versioning
         try:
@@ -93,7 +95,23 @@ def scan():
                         cis_rules["s3_encryption_disabled"]["remediation"]
                     )
                 })
-        except Exception as e:
-            print(f"Error checking encryption for {bucket_name}: {e}")
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ServerSideEncryptionConfigurationNotFoundError':
+                findings.append({
+                    "resource": bucket_name,
+                    "type": "S3 Bucket",
+                    "risk": (
+                        cis_rules["s3_encryption_disabled"]["risk_level"]
+                    ),
+                    "issue": "Bucket encryption is not enabled",
+                    "cis_rule": (
+                        cis_rules["s3_encryption_disabled"]["cis_rule"]
+                    ),
+                    "remediation": (
+                        cis_rules["s3_encryption_disabled"]["remediation"]
+                    )
+                })
+            else:
+                print(f"Error checking encryption for {bucket_name}: {e}")
 
     return findings
