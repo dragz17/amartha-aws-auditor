@@ -91,10 +91,15 @@ def find_existing_ticket(config, summary):
 def create_jira_ticket(finding, config, issue_type_id):
     """Create a Jira ticket for a security finding."""
     try:
+        # Get original resource from finding
+        original_resource = (
+            finding.get('original_resource', finding['resource'])
+        )
+
         # Prepare the ticket data
         summary = (
             f"AWS Security Finding: {finding['type']} - "
-            f"{finding['resource']} - "
+            f"{original_resource} - "
             f"{finding['issue']}"
         )
         # Check for existing ticket
@@ -102,14 +107,9 @@ def create_jira_ticket(finding, config, issue_type_id):
         if existing_ticket:
             print(
                 f"Found existing ticket {existing_ticket} for finding: "
-                f"{finding['issue']} on {finding['resource']}"
+                f"{finding['issue']} on {original_resource}"
             )
             return existing_ticket
-
-        # Get original resource from finding
-        original_resource = (
-            finding.get('original_resource', finding['resource'])
-        )
 
         ticket_data = {
             "fields": {
