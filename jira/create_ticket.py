@@ -77,9 +77,6 @@ def create_jira_ticket(finding, config, issue_type_id):
                 ),
                 "issuetype": {
                     "id": issue_type_id
-                },
-                "priority": {
-                    "name": "High" if finding['risk'] == "HIGH" else "Medium"
                 }
             }
         }
