@@ -15,8 +15,6 @@ An automated tool to scan AWS resources for security misconfigurations based on 
   - [Via GitHub Actions (CI/CD)](#via-github-actions-cicd)
 - [Outputs](#outputs)
 - [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
 
 ### Features
 
