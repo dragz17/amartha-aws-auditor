@@ -41,7 +41,7 @@ An automated tool to scan AWS resources for security misconfigurations based on 
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/[your-org]/amartha-aws-auditor.git
+    git clone https://github.com/dragz17/amartha-aws-auditor.git
     cd amartha-aws-auditor
     ```
 2.  Install dependencies:
